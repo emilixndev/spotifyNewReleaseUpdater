@@ -7,6 +7,9 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, request, redirect, session, url_for
 
+PlaylistToLookUpName = "ToAddInGymPlaylist"
+PlaylistToAddIn = "Gym - Hard"
+
 dotenv.load_dotenv()
 app = Flask(__name__)
 
@@ -33,20 +36,73 @@ def redirect_page():
 
 @app.route('/savePlaylists')
 def savePlaylists():
+    playlistToAddIn = ""
+    tracksToAdd = []
     try:
         token_info = get_token()
     except:
         print("User not logged in")
         return redirect("/")
-
+    artisteToLookup = []
     sp = spotipy.Spotify(auth=token_info)
     current_playlists = sp.current_user_playlists()['items']
+    print("PLAYLISTS")
+    print(current_playlists)
     for playlist in current_playlists:
-        if(playlist['name'] == 'Gym - Hard'):
-            print(playlist)
-            # Get Json formated
-            text = json.dumps(playlist, sort_keys=True, indent=4)
-            print(text)
+        if playlist['name'] == PlaylistToLookUpName:
+            print("Playlist to search in found")
+            playlistItems = sp.playlist_items(playlist['id'])['items']
+
+            for item in playlistItems:
+                artisteToLookup.append(item['track']['artists'][0]['id'])
+        if playlist['name'] == PlaylistToAddIn:
+            playlistToAddIn = playlist
+
+    print("ARTISTE TO LOOKUP TO")
+    print(artisteToLookup)
+
+    for artisteid in artisteToLookup:
+
+        singles = sp.artist_albums(artisteid, limit=2, album_type='single')
+        print("start looking for singles ")
+        for single in singles['items']:
+
+            # if release date is today
+            # if single['release_date'] == time.strftime("%Y-%m-%d"):
+            if (single['release_date'] == "2023-12-22"):
+                print("Single found today")
+
+                tracksToAdd.append(sp.album(single['id'])['tracks']['items'][0]['uri'])
+
+                print(single['name'])
+        # same with albums
+        albums = sp.artist_albums(artisteid, limit=2, album_type='album')
+        for album in albums['items']:
+            # if release date is today
+            if album['release_date'] == time.strftime("%Y-%m-%d"):
+                # if album['release_date'] == "2023-11-24":
+                print("ALBUM FOUND")
+                print(album['name'])
+
+                albumTracks = sp.album_tracks(album['id'])
+                for track in albumTracks['items']:
+                    print(track['uri'])
+                    tracksToAdd.append(track['uri'])
+                    sp.playlist_add_items(playlist_id=playlistToAddIn['id'], items=[track['uri']])
+
+    TrackNotDuplicate = []
+
+    for track in tracksToAdd:
+        print(track)
+        if track not in TrackNotDuplicate:
+            TrackNotDuplicate.append(track)
+    print("TRACKS TO ADD")
+    print(TrackNotDuplicate)
+    for finalTrack in TrackNotDuplicate:
+        print("ADDING TRACK")
+        sp.playlist_add_items(playlist_id=playlistToAddIn['id'], items=[finalTrack])
+
+    # sp.playlist_add_items(playlist_id=playlistToAddIn['id'], items=[album['tracks']['items']['uri']])
 
     return ("OAUTH SUCCESSFUL")
 
