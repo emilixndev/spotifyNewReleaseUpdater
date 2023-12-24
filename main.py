@@ -68,8 +68,8 @@ def savePlaylists():
         for single in singles['items']:
 
             # if release date is today
-            # if single['release_date'] == time.strftime("%Y-%m-%d"):
-            if (single['release_date'] == "2023-12-22"):
+            if single['release_date'] == time.strftime("%Y-%m-%d"):
+            # if (single['release_date'] == "2023-12-22"):
                 print("Single found today")
 
                 tracksToAdd.append(sp.album(single['id'])['tracks']['items'][0]['uri'])
@@ -103,8 +103,8 @@ def savePlaylists():
         sp.playlist_add_items(playlist_id=playlistToAddIn['id'], items=[finalTrack])
 
     # sp.playlist_add_items(playlist_id=playlistToAddIn['id'], items=[album['tracks']['items']['uri']])
-
-    return ("OAUTH SUCCESSFUL")
+    printTest()
+    return "OAUTH SUCCESSFUL"
 
 
 def get_token():
@@ -113,7 +113,7 @@ def get_token():
         return redirect(url_for('login', external=True))
     now = int(time.time())
     is_expired = token_info['expires_at'] - now < 60
-    if (is_expired):
+    if is_expired:
         spotify_oauth = create_spotify_oauth()
         token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
     return token_info['access_token']
